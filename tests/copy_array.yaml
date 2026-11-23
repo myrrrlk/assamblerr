@@ -1,0 +1,36 @@
+
+program:
+  # Загружаем начальный адрес исходного массива в регистр 1.
+  - command: load_const
+    constant: 100
+    address: 1
+
+  # Копируем первый элемент.
+  - command: read_memory
+    offset: 0
+    destination: 2
+    base: 1
+
+  - command: write_memory
+    address: 200
+    source: 2
+
+  # Копируем второй элемент.
+  - command: read_memory
+    offset: 1
+    destination: 2
+    base: 1
+
+  - command: write_memory
+    address: 201
+    source: 2
+
+  # Копируем третий элемент.
+  - command: read_memory
+    offset: 2
+    destination: 2
+    base: 1
+
+  - command: write_memory
+    address: 202
+    source: 2

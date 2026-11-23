@@ -5,4 +5,6 @@ venv/
 .idea/
 .vscode/
 *.bin
-.pytest_cache/
+.pytest_cache/\
+*.csv.tmp
+copy_dump.csv
