@@ -5,17 +5,16 @@ import sys
 
 
 class Memory:
-    """Модель памяти учебной виртуальной машины."""
+    """Модель памяти виртуальной машины."""
 
     def __init__(self):
-        # Память команд хранит бинарную программу.
+        # Память команд.
         self.instruction_memory = b""
 
-        # 64 регистра, адреса регистров от 0 до 63.
+        # 64 регистра.
         self.registers = [0] * 64
 
-        # Память данных хранится отдельно от памяти команд.
-        # Используем словарь, чтобы поддерживать большие адреса.
+        # Память данных.
         self.data_memory = {}
 
     def load_program(self, program):
@@ -23,13 +22,17 @@ class Memory:
 
     def read_register(self, address):
         if not 0 <= address < 64:
-            raise ValueError(f"Недопустимый адрес регистра: {address}")
+            raise ValueError(
+                f"Недопустимый адрес регистра: {address}"
+            )
 
         return self.registers[address]
 
     def write_register(self, address, value):
         if not 0 <= address < 64:
-            raise ValueError(f"Недопустимый адрес регистра: {address}")
+            raise ValueError(
+                f"Недопустимый адрес регистра: {address}"
+            )
 
         self.registers[address] = value
 
@@ -47,7 +50,7 @@ class Memory:
 
 
 class Interpreter:
-    """Интерпретатор учебной виртуальной машины, вариант №9."""
+    """Интерпретатор виртуальной машины, вариант №9."""
 
     COMMAND_SIZES = {
         3: 4,
@@ -68,7 +71,7 @@ class Interpreter:
         self.executed_commands = 0
 
     def decode_instruction(self):
-        """Читает машинную команду и преобразует её в поля."""
+        """Декодирование машинной команды."""
 
         program = self.memory.instruction_memory
 
@@ -80,11 +83,14 @@ class Interpreter:
 
         if opcode not in self.COMMAND_SIZES:
             raise ValueError(
-                f"Неизвестный код операции: {opcode}, адрес: {self.pc}"
+                f"Неизвестная команда: {opcode}, адрес: {self.pc}"
             )
 
         size = self.COMMAND_SIZES[opcode]
-        instruction_bytes = program[self.pc:self.pc + size]
+
+        instruction_bytes = program[
+            self.pc:self.pc + size
+        ]
 
         if len(instruction_bytes) != size:
             raise ValueError(
@@ -101,19 +107,23 @@ class Interpreter:
             "size": size,
         }
 
+        # load_const
         if opcode == 3:
             instruction["B"] = (value >> 4) & 0x1FFFF
             instruction["C"] = (value >> 21) & 0x3F
 
+        # read_memory
         elif opcode == 12:
             instruction["B"] = (value >> 4) & 0xFFF
             instruction["C"] = (value >> 16) & 0x3F
             instruction["D"] = (value >> 22) & 0x3F
 
+        # write_memory
         elif opcode == 14:
             instruction["B"] = (value >> 4) & 0xFFFFFFFF
             instruction["C"] = (value >> 36) & 0x3F
 
+        # bswap
         elif opcode == 6:
             instruction["B"] = (value >> 4) & 0x3F
             instruction["C"] = (value >> 10) & 0xFFFFFFFF
@@ -121,50 +131,84 @@ class Interpreter:
         return instruction
 
     def execute_instruction(self, instruction):
-        """Выполняет одну команду виртуальной машины."""
+        """Выполнение машинной команды."""
 
         opcode = instruction["A"]
 
-        # Загрузка константы.
+        # 1. Загрузка константы.
         if opcode == 3:
             constant = instruction["B"]
             destination = instruction["C"]
 
-            self.memory.write_register(destination, constant)
+            self.memory.write_register(
+                destination,
+                constant
+            )
 
-        # Чтение значения из памяти.
+        # 2. Чтение из памяти.
         elif opcode == 12:
             offset = instruction["B"]
             destination = instruction["C"]
             base_register = instruction["D"]
 
-            base_address = self.memory.read_register(base_register)
+            base_address = self.memory.read_register(
+                base_register
+            )
+
             address = base_address + offset
 
             value = self.memory.read_data(address)
 
-            self.memory.write_register(destination, value)
+            self.memory.write_register(
+                destination,
+                value
+            )
 
-        # Запись значения в память.
+        # 3. Запись в память.
         elif opcode == 14:
             address = instruction["B"]
             source_register = instruction["C"]
 
-            value = self.memory.read_register(source_register)
+            value = self.memory.read_register(
+                source_register
+            )
 
-            self.memory.write_data(address, value)
+            self.memory.write_data(
+                address,
+                value
+            )
 
-        # Команда bswap будет реализована на этапе 4.
+        # 4. Изменение порядка байтов.
         elif opcode == 6:
-            raise NotImplementedError(
-                "Команда bswap будет реализована на этапе 4."
+            source_register = instruction["B"]
+            destination_address = instruction["C"]
+
+            value = self.memory.read_register(
+                source_register
+            )
+
+            if not 0 <= value <= 0xFFFFFFFF:
+                raise ValueError(
+                    "Значение bswap должно помещаться в 32 бита."
+                )
+
+            result = int.from_bytes(
+                value.to_bytes(4, byteorder="little"),
+                byteorder="big"
+            )
+
+            self.memory.write_data(
+                destination_address,
+                result
             )
 
         else:
-            raise ValueError(f"Неизвестная команда: {opcode}")
+            raise ValueError(
+                f"Неизвестная операция: {opcode}"
+            )
 
     def run(self):
-        """Основной цикл интерпретации программы."""
+        """Основной цикл интерпретации."""
 
         while self.pc < len(self.memory.instruction_memory):
 
@@ -181,10 +225,12 @@ class Interpreter:
         return self.memory
 
     def save_dump(self, output_path, start_address, end_address):
-        """Сохраняет диапазон памяти данных в CSV."""
+        """Сохранение дампа памяти в CSV."""
 
         if start_address < 0 or end_address < start_address:
-            raise ValueError("Некорректный диапазон адресов памяти.")
+            raise ValueError(
+                "Некорректный диапазон адресов памяти."
+            )
 
         with open(
             output_path,
@@ -197,15 +243,20 @@ class Interpreter:
 
             writer.writerow(["address", "value"])
 
-            for address in range(start_address, end_address + 1):
+            for address in range(
+                start_address,
+                end_address + 1
+            ):
                 value = self.memory.read_data(address)
-                writer.writerow([address, value])
 
-
+                writer.writerow([
+                    address,
+                    value
+                ])
 
 
 def load_initial_memory(file_path):
-    """Загружает начальные значения памяти из CSV."""
+    """Загрузка начальной памяти из CSV."""
 
     initial_data = {}
 
@@ -247,34 +298,36 @@ def load_initial_memory(file_path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Интерпретатор учебной виртуальной машины, вариант №9"
+        description=(
+            "Интерпретатор учебной виртуальной машины, вариант №9"
+        )
     )
 
     parser.add_argument(
         "input",
-        help="Путь к бинарному файлу программы"
+        help="Путь к бинарному файлу"
     )
 
     parser.add_argument(
         "dump",
-        help="Путь к CSV-файлу дампа памяти"
+        help="Путь к CSV-дампу"
     )
 
     parser.add_argument(
         "start",
         type=int,
-        help="Начальный адрес памяти для дампа"
+        help="Начальный адрес памяти"
     )
 
     parser.add_argument(
         "end",
         type=int,
-        help="Конечный адрес памяти для дампа"
+        help="Конечный адрес памяти"
     )
 
     parser.add_argument(
         "--init",
-        help="Необязательный CSV-файл с начальными данными памяти"
+        help="Файл с начальными данными памяти"
     )
 
     args = parser.parse_args()
@@ -288,7 +341,10 @@ def main():
         if args.init:
             initial_data = load_initial_memory(args.init)
 
-        interpreter = Interpreter(program, initial_data)
+        interpreter = Interpreter(
+            program,
+            initial_data
+        )
 
         interpreter.run()
 
@@ -299,14 +355,25 @@ def main():
         )
 
         print("Выполнение программы завершено.")
-        print(f"Выполнено команд: {interpreter.executed_commands}")
+        print(
+            f"Выполнено команд: {interpreter.executed_commands}"
+        )
         print(f"Дамп памяти сохранен: {args.dump}")
         print(
             f"Диапазон памяти: {args.start} - {args.end}"
         )
 
-    except (ValueError, OSError, NotImplementedError) as error:
-        print(f"Ошибка: {error}", file=sys.stderr)
+    except (
+        ValueError,
+        OSError,
+        NotImplementedError
+    ) as error:
+
+        print(
+            f"Ошибка: {error}",
+            file=sys.stderr
+        )
+
         sys.exit(1)
 
 

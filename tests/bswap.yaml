@@ -1,0 +1,12 @@
+
+program:
+  # Загружаем число 0x00012345 в регистр 31.
+  - command: load_const
+    constant: 74565
+    address: 31
+
+  # Меняем порядок байтов.
+  # Результат записываем по адресу 416.
+  - command: bswap
+    source: 31
+    destination: 416

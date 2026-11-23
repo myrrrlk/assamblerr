@@ -8,3 +8,6 @@ venv/
 .pytest_cache/\
 *.csv.tmp
 copy_dump.csv
+*.bin
+copy_dump.csv
+bswap_dump.csv
