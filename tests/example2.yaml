@@ -1,0 +1,69 @@
+
+program:
+  # Загружаем начальный адрес вектора.
+  - command: load_const
+    constant: 100
+    address: 1
+
+  # Элемент 1.
+  - command: read_memory
+    offset: 0
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 100
+
+  # Элемент 2.
+  - command: read_memory
+    offset: 1
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 101
+
+  # Элемент 3.
+  - command: read_memory
+    offset: 2
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 102
+
+  # Элемент 4.
+  - command: read_memory
+    offset: 3
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 103
+
+  # Элемент 5.
+  - command: read_memory
+    offset: 4
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 104
+
+  # Элемент 6.
+  - command: read_memory
+    offset: 5
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 105
+
+  # Элемент 7.
+  - command: read_memory
+    offset: 6
+    destination: 31
+    base: 1
+  - command: bswap
+    source: 31
+    destination: 106

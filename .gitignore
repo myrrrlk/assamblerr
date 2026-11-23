@@ -11,3 +11,5 @@ copy_dump.csv
 *.bin
 copy_dump.csv
 bswap_dump.csv
+vector7_dump.csv
+example*_dump.csv
