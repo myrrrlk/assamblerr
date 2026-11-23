@@ -3,6 +3,7 @@ import argparse
 import sys
 
 from parser import parse_program
+from encoder import save_binary, encode_program
 
 
 def print_internal_representation(program):
@@ -24,6 +25,35 @@ def print_internal_representation(program):
     print(f"Всего команд: {len(program)}")
 
 
+def print_machine_code(machine_code):
+    """Выводит машинный код в шестнадцатеричном формате."""
+
+    print("\nМАШИННЫЙ КОД")
+    print("=" * 45)
+
+    position = 0
+
+    while position < len(machine_code):
+        opcode = machine_code[position] & 0x0F
+
+        if opcode in (3, 12):
+            size = 4
+        else:
+            size = 6
+
+        instruction_bytes = machine_code[position:position + size]
+
+        print(
+            ", ".join(
+                f"0x{byte:02X}" for byte in instruction_bytes
+            )
+        )
+
+        position += size
+
+    print("=" * 45)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Ассемблер учебной виртуальной машины, вариант №9"
@@ -36,32 +66,35 @@ def main():
 
     parser.add_argument(
         "output",
-        help="Путь к выходному бинарному файлу (используется на этапе 2)"
+        help="Путь к выходному бинарному файлу"
     )
 
     parser.add_argument(
         "--test",
         action="store_true",
-        help="Режим тестирования: вывести промежуточное представление"
+        help="Режим тестирования"
     )
 
     args = parser.parse_args()
 
     try:
+        # Первый этап: разбор YAML.
         program = parse_program(args.input)
+
+        # Второй этап: перевод в машинный код.
+        machine_code = encode_program(program)
+
+        # Сохраняем бинарный файл.
+        file_size = save_binary(program, args.output)
 
         if args.test:
             print_internal_representation(program)
-        else:
-            print("Ассемблирование выполнено успешно.")
-            print(f"Обработано команд: {len(program)}")
-            print("Промежуточное представление создано.")
-            print(
-                "Формирование бинарного файла будет реализовано на этапе 2."
-            )
-            print(f"Путь для выходного файла: {args.output}")
+            print_machine_code(machine_code)
 
-    except (ValueError, OSError) as error:
+        print(f"\nРазмер двоичного файла: {file_size} байт")
+        print(f"Файл сохранен: {args.output}")
+
+    except (ValueError, OSError, KeyError) as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         sys.exit(1)
 
