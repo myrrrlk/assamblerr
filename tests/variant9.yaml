@@ -1,0 +1,17 @@
+program:
+  - command: load_const
+    constant: 896
+    address: 5
+
+  - command: read_memory
+    offset: 389
+    destination: 42
+    base: 3
+
+  - command: write_memory
+    address: 617
+    source: 35
+
+  - command: bswap
+    source: 31
+    destination: 416
