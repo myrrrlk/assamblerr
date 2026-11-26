@@ -1,8 +1,9 @@
+"""Разбор YAML-программ виртуальной машины."""
+
 
 import yaml
 
 
-# Описание команд виртуальной машины, вариант №9.
 COMMANDS = {
     "load_const": {
         "A": 3,
@@ -72,61 +73,71 @@ def parse_program(file_path):
     if not isinstance(program, list) or not program:
         raise ValueError("Раздел 'program' должен быть непустым списком.")
 
-    result = []
+    return [parse_instruction(item, index)
+            for index, item in enumerate(program, start=1)]
 
-    for index, instruction in enumerate(program, start=1):
-        if not isinstance(instruction, dict):
-            raise ValueError(
-                f"Команда №{index} должна быть словарем."
-            )
 
-        if "command" not in instruction:
-            raise ValueError(
-                f"У команды №{index} отсутствует поле 'command'."
-            )
+def get_command_name(instruction, index):
+    """Проверяет тип команды и её название."""
+    if not isinstance(instruction, dict):
+        raise ValueError(
+            f"Команда №{index} должна быть словарем."
+        )
 
-        command_name = instruction["command"]
+    if "command" not in instruction:
+        raise ValueError(
+            f"У команды №{index} отсутствует поле 'command'."
+        )
 
-        if not isinstance(command_name, str):
-            raise ValueError(
-                f"Название команды №{index} должно быть строкой."
-            )
+    command_name = instruction["command"]
 
-        if command_name not in COMMANDS:
-            raise ValueError(
-                f"Неизвестная команда №{index}: {command_name}"
-            )
+    if not isinstance(command_name, str):
+        raise ValueError(
+            f"Название команды №{index} должно быть строкой."
+        )
 
-        specification = COMMANDS[command_name]
-        expected_fields = set(specification["fields"].keys())
-        actual_fields = set(instruction.keys()) - {"command"}
+    if command_name not in COMMANDS:
+        raise ValueError(
+            f"Неизвестная команда №{index}: {command_name}"
+        )
 
-        missing = expected_fields - actual_fields
-        extra = actual_fields - expected_fields
+    return command_name
 
-        if missing:
-            raise ValueError(
-                f"Команда №{index}: отсутствуют поля {sorted(missing)}."
-            )
 
-        if extra:
-            raise ValueError(
-                f"Команда №{index}: лишние поля {sorted(extra)}."
-            )
+def validate_fields(instruction, specification, index):
+    """Проверяет наличие обязательных и отсутствие лишних полей."""
+    expected_fields = set(specification["fields"].keys())
+    actual_fields = set(instruction.keys()) - {"command"}
 
-        # Формируем промежуточное представление.
-        parsed_instruction = {
-            "command": command_name,
-            "A": specification["A"],
-        }
+    missing = expected_fields - actual_fields
+    extra = actual_fields - expected_fields
 
-        for field_name, (field_code, bits) in specification["fields"].items():
-            value = instruction[field_name]
+    if missing:
+        raise ValueError(
+            f"Команда №{index}: отсутствуют поля {sorted(missing)}."
+        )
 
-            validate_field(field_name, value, bits)
+    if extra:
+        raise ValueError(
+            f"Команда №{index}: лишние поля {sorted(extra)}."
+        )
 
-            parsed_instruction[field_code] = value
 
-        result.append(parsed_instruction)
+def parse_instruction(instruction, index):
+    """Преобразует одну YAML-команду во внутреннее представление."""
+    command_name = get_command_name(instruction, index)
+    specification = COMMANDS[command_name]
+    validate_fields(instruction, specification, index)
+    parsed_instruction = {
+        "command": command_name,
+        "A": specification["A"],
+    }
 
-    return result
+    for field_name, (field_code, bits) in specification["fields"].items():
+        value = instruction[field_name]
+
+        validate_field(field_name, value, bits)
+
+        parsed_instruction[field_code] = value
+
+    return parsed_instruction

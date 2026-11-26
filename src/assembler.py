@@ -54,7 +54,8 @@ def print_machine_code(machine_code):
     print("=" * 45)
 
 
-def main():
+def parse_args():
+    """Разбирает аргументы командной строки."""
     parser = argparse.ArgumentParser(
         description="Ассемблер учебной виртуальной машины, вариант №9"
     )
@@ -75,16 +76,18 @@ def main():
         help="Режим тестирования"
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    """Запускает программу из командной строки."""
+    args = parse_args()
 
     try:
-        # Первый этап: разбор YAML.
         program = parse_program(args.input)
 
-        # Второй этап: перевод в машинный код.
         machine_code = encode_program(program)
 
-        # Сохраняем бинарный файл.
         file_size = save_binary(program, args.output)
 
         if args.test:

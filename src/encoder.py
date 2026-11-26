@@ -1,63 +1,26 @@
+"""Кодирование команд учебной виртуальной машины."""
 
-try:
-    from .parser import COMMANDS
-except ImportError:
-    from parser import COMMANDS
+COMMAND_SIZES = {
+    "load_const": 4,
+    "read_memory": 4,
+    "write_memory": 6,
+    "bswap": 6,
+}
+BIT_POSITIONS = {
+    "load_const": {"B": 4, "C": 21},
+    "read_memory": {"B": 4, "C": 16, "D": 22},
+    "write_memory": {"B": 4, "C": 36},
+    "bswap": {"B": 4, "C": 10},
+}
+
 
 def encode_instruction(instruction):
-    """
-    Преобразует одну команду из промежуточного
-    представления в машинный код.
-    """
-
+    """Собирает поля команды и возвращает байты в порядке little-endian."""
     command_name = instruction["command"]
-    specification = COMMANDS[command_name]
-
-    # Размер команды в байтах.
-    sizes = {
-        "load_const": 4,
-        "read_memory": 4,
-        "write_memory": 6,
-        "bswap": 6,
-    }
-
-    size = sizes[command_name]
-
-    # Собираем все поля команды в одно целое число.
-    machine_code = 0
-
-    # Поле A всегда начинается с нулевого бита.
-    machine_code |= instruction["A"]
-
-    # Получаем расположение остальных полей.
-    bit_positions = {
-        "load_const": {
-            "B": 4,
-            "C": 21,
-        },
-        "read_memory": {
-            "B": 4,
-            "C": 16,
-            "D": 22,
-        },
-        "write_memory": {
-            "B": 4,
-            "C": 36,
-        },
-        "bswap": {
-            "B": 4,
-            "C": 10,
-        },
-    }
-
-    positions = bit_positions[command_name]
-
-    for field, shift in positions.items():
+    machine_code = instruction["A"]
+    for field, shift in BIT_POSITIONS[command_name].items():
         machine_code |= instruction[field] << shift
-
-    # Переводим число в последовательность байтов.
-    # Порядок байтов — little-endian.
-    return machine_code.to_bytes(size, byteorder="little")
+    return machine_code.to_bytes(COMMAND_SIZES[command_name], byteorder="little")
 
 
 def encode_program(program):
